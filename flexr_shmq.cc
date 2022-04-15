@@ -29,6 +29,14 @@ void FlexrShmQueueMeta::closeQueue()
 }
 
 
+bool FlexrShmQueueMeta::initQueue(const char *name, uint32_t maxElem, uint32_t elemSize, bool removeFile)
+{
+  if(removeFile) shm_unlink(name);
+
+  return initQueue(name, maxElem, elemSize);
+}
+
+
 bool FlexrShmQueueMeta::initQueue(const char *name, uint32_t maxElem, uint32_t elemSize)
 {
   bool created;

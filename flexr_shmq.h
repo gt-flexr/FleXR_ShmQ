@@ -38,6 +38,7 @@ public:
   ~FlexrShmQueueMeta();
 
   bool initQueue(char const* name, uint32_t maxElem, uint32_t elemSize);
+  bool initQueue(char const* name, uint32_t maxElem, uint32_t elemSize, bool removeFile);
   void cleanInit();
   void closeQueue();
 

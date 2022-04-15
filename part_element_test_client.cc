@@ -6,7 +6,7 @@ using namespace std;
 int main()
 {
   FlexrShmQueueMeta meta;
-  meta.initQueue("/part_elem", 5, 1024*1024*10);
+  meta.initQueue("/part_elem", 5, 1024*1024*10, true);
 
   char *t = new char[1024*1024*10];
   int num = 0;
