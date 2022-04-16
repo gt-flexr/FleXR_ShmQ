@@ -98,6 +98,27 @@ bool FlexrShmQueueMeta::initQueue(const char *name, uint32_t maxElem, uint32_t e
 }
 
 
+bool FlexrShmQueueMeta::isFull()
+{
+  if(queue->numElem == maxElem)
+  {
+    return true;
+  }
+
+  return false;
+}
+
+
+bool FlexrShmQueueMeta::isEmpty()
+{
+  if(queue->numElem == 0)
+  {
+    return true;
+  }
+
+  return false;
+}
+
 
 bool FlexrShmQueueMeta::enqueueElem(void *element, int len)
 {
@@ -113,10 +134,7 @@ bool FlexrShmQueueMeta::dequeueElem(void *element, int len)
 
 bool FlexrShmQueueMeta::enqueueElemPart(void *element, int offset, int len, bool done)
 {
-  if(queue->numElem == maxElem)
-  {
-    return false;
-  }
+  if(isFull()) return false;
 
   if (offset+len > this->elemSize)
   {
@@ -141,10 +159,7 @@ bool FlexrShmQueueMeta::enqueueElemPart(void *element, int offset, int len, bool
 
 bool FlexrShmQueueMeta::dequeueElemPart(void *element, int offset, int len, bool done)
 {
-  if(queue->numElem == 0)
-  {
-    return false;
-  }
+  if(isEmpty()) return false;
 
   if (offset+len > this->elemSize)
   {

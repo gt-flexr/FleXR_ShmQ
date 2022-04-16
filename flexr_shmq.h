@@ -42,8 +42,9 @@ public:
   void cleanInit();
   void closeQueue();
 
+  bool isFull();
+  bool isEmpty();
 
-  // enqueue exact element
   bool enqueueElem(void* element, int len);
   bool dequeueElem(void* element, int len);
 
