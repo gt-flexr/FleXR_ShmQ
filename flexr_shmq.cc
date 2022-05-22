@@ -120,21 +120,28 @@ bool FlexrShmQueueMeta::isEmpty()
 }
 
 
-bool FlexrShmQueueMeta::enqueueElem(void *element, int len)
+bool FlexrShmQueueMeta::enqueueElem(void *element, int len, bool blocking)
 {
-  return enqueueElemPart(element, 0, len, true);
+  return enqueueElemPart(element, 0, len, blocking, true);
 }
 
 
-bool FlexrShmQueueMeta::dequeueElem(void *element, int len)
+bool FlexrShmQueueMeta::dequeueElem(void *element, int len, bool blocking)
 {
-  return dequeueElemPart(element, 0, len, true);
+  return dequeueElemPart(element, 0, len, blocking, true);
 }
 
 
-bool FlexrShmQueueMeta::enqueueElemPart(void *element, int offset, int len, bool done)
+bool FlexrShmQueueMeta::enqueueElemPart(void *element, int offset, int len, bool blocking, bool done)
 {
-  if(isFull()) return false;
+  if(blocking)
+  {
+    while(isFull()) std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  else
+  {
+    if(isFull()) return false;
+  }
 
   if (offset+len > this->elemSize)
   {
@@ -157,9 +164,16 @@ bool FlexrShmQueueMeta::enqueueElemPart(void *element, int offset, int len, bool
 }
 
 
-bool FlexrShmQueueMeta::dequeueElemPart(void *element, int offset, int len, bool done)
+bool FlexrShmQueueMeta::dequeueElemPart(void *element, int offset, int len, bool blocking, bool done)
 {
-  if(isEmpty()) return false;
+  if(blocking)
+  {
+    while(isEmpty()) std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  else
+  {
+    if(isEmpty()) return false;
+  }
 
   if (offset+len > this->elemSize)
   {

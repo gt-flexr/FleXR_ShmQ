@@ -1,6 +1,6 @@
 #pragma once
 
-#include <pthread.h>
+#include <thread>
 #include <cstdint>
 #include <string.h>
 #include <fcntl.h>
@@ -45,10 +45,11 @@ public:
   bool isFull();
   bool isEmpty();
 
-  bool enqueueElem(void* element, int len);
-  bool dequeueElem(void* element, int len);
+  // blocking & nonblocking semantics
+  bool enqueueElem(void* element, int len, bool blocking=false);
+  bool dequeueElem(void* element, int len, bool blocking=false);
 
-  bool enqueueElemPart(void* element, int offset, int len, bool done);
-  bool dequeueElemPart(void* element, int offset, int len, bool done);
+  bool enqueueElemPart(void* element, int offset, int len, bool blocking, bool done);
+  bool dequeueElemPart(void* element, int offset, int len, bool blocking, bool done);
 };
 
