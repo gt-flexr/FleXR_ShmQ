@@ -144,6 +144,40 @@ bool FlexrShmQueueMeta::dequeueElem(void *element, int &occupiedSize, int len, b
 }
 
 
+bool FlexrShmQueueMeta::dequeueElem(void *element, uint32_t &occupiedSize, uint32_t bufSize, bool blocking)
+{
+  if(blocking)
+  {
+    while(isEmpty()) std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  else
+  {
+    if(isEmpty()) return false;
+  }
+
+  pthread_mutex_lock(&queue->lock);
+
+  uint32_t elemHead = queue->front * (sizeof(FlexrElemMeta)+elemSize);
+  elemMeta = (FlexrElemMeta*)(&queue->data[elemHead]);
+
+  occupiedSize = elemMeta->occupiedSize;
+  if(bufSize < occupiedSize)
+  {
+    pthread_mutex_unlock(&queue->lock);
+    printf("bufSize %d < occupiedSize %d \n", bufSize, occupiedSize);
+    return false;
+  }
+
+  memcpy(element, &queue->data[elemHead + sizeof(FlexrElemMeta)], occupiedSize);
+
+  queue->numElem--;
+  queue->front = (queue->front+1) % maxElem;
+
+  pthread_mutex_unlock(&queue->lock);
+  return true;
+}
+
+
 // enqueueElem from REAR
 bool FlexrShmQueueMeta::enqueueElemPart(void *element, int offset, int len, bool blocking, bool done)
 {
