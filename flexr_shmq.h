@@ -10,6 +10,18 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+class FlexrElemMeta
+{
+public:
+  uint32_t occupiedSize;
+
+  void init()
+  {
+    occupiedSize = 0;
+  }
+};
+
+
 class FlexrShmQueue
 {
 public:
@@ -21,7 +33,10 @@ public:
 };
 
 
-
+/*
+ * | FlexrShmQueue                                                                                           |
+ * | FlexrShmQueue | FlexrElemMeta + Elem Data | FlexrElemMeta + Elem Data | FlexrElemMeta + Elem Data | ... |
+ */
 class FlexrShmQueueMeta
 {
 public:
@@ -34,6 +49,9 @@ public:
   int shmemFd;
   FlexrShmQueue* queue;
 
+  FlexrElemMeta *elemMeta;
+  bool curElemAccess;
+
   FlexrShmQueueMeta();
   ~FlexrShmQueueMeta();
 
@@ -45,11 +63,13 @@ public:
   bool isFull();
   bool isEmpty();
 
+  void printInfo();
+
   // blocking & nonblocking semantics
   bool enqueueElem(void* element, int len, bool blocking=false);
-  bool dequeueElem(void* element, int len, bool blocking=false);
+  bool dequeueElem(void* element, int &occupiedSize, int len, bool blocking=false);
 
   bool enqueueElemPart(void* element, int offset, int len, bool blocking, bool done);
-  bool dequeueElemPart(void* element, int offset, int len, bool blocking, bool done);
+  bool dequeueElemPart(void* element, int &occupiedSize, int offset, int len, bool blocking, bool done);
 };
 

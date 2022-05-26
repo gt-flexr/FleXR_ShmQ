@@ -43,7 +43,7 @@ bool FlexrShmQueueMeta::initQueue(const char *name, uint32_t maxElem, uint32_t e
 
   this->maxElem       = maxElem;
   this->elemSize      = elemSize;
-  this->totalDataSize = maxElem * elemSize;
+  this->totalDataSize = maxElem * (sizeof(FlexrElemMeta) + elemSize);
   this->name          = strdup(name);
   this->queueSize     = totalDataSize + sizeof(FlexrShmQueue) - 1;
 
@@ -82,7 +82,8 @@ bool FlexrShmQueueMeta::initQueue(const char *name, uint32_t maxElem, uint32_t e
     return false;
   }
 
-  if (created) {
+  if (created)
+  {
     queue->rear = queue->front = queue->numElem = 0;
 
     pthread_mutexattr_t attr;
@@ -120,18 +121,30 @@ bool FlexrShmQueueMeta::isEmpty()
 }
 
 
+void FlexrShmQueueMeta::printInfo()
+{
+  printf("===== FlexrShmQueueMeta: %s =====\n", name);
+  printf("maxElem %d, elemSize %d, elemMetaSize %ld \n", maxElem, elemSize, sizeof(FlexrElemMeta));
+  printf("totalDataSize: %d\n", totalDataSize);
+  printf("FlexrShmQueue size: %ld\n", sizeof(FlexrShmQueue));
+  printf("queueSize: %d\n", queueSize);
+}
+
+
 bool FlexrShmQueueMeta::enqueueElem(void *element, int len, bool blocking)
 {
+  curElemAccess = false;
   return enqueueElemPart(element, 0, len, blocking, true);
 }
 
 
-bool FlexrShmQueueMeta::dequeueElem(void *element, int len, bool blocking)
+bool FlexrShmQueueMeta::dequeueElem(void *element, int &occupiedSize, int len, bool blocking)
 {
-  return dequeueElemPart(element, 0, len, blocking, true);
+  return dequeueElemPart(element, occupiedSize, 0, len, blocking, true);
 }
 
 
+// enqueueElem from REAR
 bool FlexrShmQueueMeta::enqueueElemPart(void *element, int offset, int len, bool blocking, bool done)
 {
   if(blocking)
@@ -150,13 +163,24 @@ bool FlexrShmQueueMeta::enqueueElemPart(void *element, int offset, int len, bool
 
   pthread_mutex_lock(&this->queue->lock);
 
-  uint32_t elemHead = queue->rear * elemSize;
-  memcpy(&queue->data[elemHead + offset], element, len);
+  uint32_t elemHead = queue->rear * (sizeof(FlexrElemMeta)+elemSize);
+  elemMeta = (FlexrElemMeta*)(&queue->data[elemHead]);
+
+  // first access to this elem
+  if(curElemAccess == false)
+  {
+    curElemAccess = true;
+    elemMeta->init();
+  }
+
+  memcpy(&queue->data[elemHead + sizeof(FlexrElemMeta) + offset], element, len);
+  elemMeta->occupiedSize += len;
 
   if(done == true)
   {
     queue->numElem++;
     queue->rear = (queue->rear+1) % maxElem;
+    curElemAccess = false;
   }
 
   pthread_mutex_unlock(&queue->lock);
@@ -164,7 +188,8 @@ bool FlexrShmQueueMeta::enqueueElemPart(void *element, int offset, int len, bool
 }
 
 
-bool FlexrShmQueueMeta::dequeueElemPart(void *element, int offset, int len, bool blocking, bool done)
+// dequeueElem from FRONT
+bool FlexrShmQueueMeta::dequeueElemPart(void *element, int &occupiedSize, int offset, int len, bool blocking, bool done)
 {
   if(blocking)
   {
@@ -175,15 +200,19 @@ bool FlexrShmQueueMeta::dequeueElemPart(void *element, int offset, int len, bool
     if(isEmpty()) return false;
   }
 
-  if (offset+len > this->elemSize)
+  pthread_mutex_lock(&queue->lock);
+
+  uint32_t elemHead = queue->front * (sizeof(FlexrElemMeta)+elemSize);
+  elemMeta = (FlexrElemMeta*)(&queue->data[elemHead]);
+
+  if (offset+len > elemMeta->occupiedSize)
   {
+    pthread_mutex_unlock(&queue->lock);
     return false;
   }
 
-  pthread_mutex_lock(&queue->lock);
-  uint32_t elemHead = queue->front * elemSize;
-
-  memcpy(element, &queue->data[elemHead+offset], len);
+  occupiedSize = elemMeta->occupiedSize;
+  memcpy(element, &queue->data[elemHead + sizeof(FlexrElemMeta) + offset], len);
 
   if(done == true)
   {

@@ -7,6 +7,7 @@ int main()
 {
   FlexrShmQueueMeta meta;
   meta.initQueue("/elem_server", 5, 1024*1024*10);
+  meta.printInfo();
 
   char *t = new char[1024*1024*10];
   for(int i = 0; i < 1024*512*10; i++)
