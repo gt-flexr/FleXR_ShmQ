@@ -3,11 +3,14 @@
 This is a lightweight shared memory queue library on Linux (tested on Ubuntu 18.04,20.04,22.04). 
 I originally write FleXR_ShmQ for my main project, [FleXR](https://github.com/gt-flexr), but this can be useful for other usage.
 
-## Install
+## Install & Test
 ```
 git clone https://github.com/gt-flexr/FleXR_ShmQ.git
 cd FleXR_ShmQ && mkdir build && cd build
 cmake .. && make -j$(nproc)
+sudo make install
+
+./test.sh
 ```
 
 ## Features
