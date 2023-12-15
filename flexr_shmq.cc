@@ -1,4 +1,5 @@
 #include "flexr_shmq.h"
+#include <cstdio>
 
 FlexrShmQueueMeta::FlexrShmQueueMeta():
   maxElem(0), elemSize(0), totalDataSize(0), queueSize(0), name(nullptr), shmemFd(-1), queue(nullptr)
